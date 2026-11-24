@@ -11,22 +11,27 @@
     .hidden { display: none !important; }
     h1, h2 { margin-top: 0; }
     p { line-height: 1.55; }
+    .input-group { margin: 20px 0; max-width: 360px; }
+    .input-group label { display: block; font-weight: 600; margin-bottom: 6px; }
+    .input-group input { width: 100%; padding: 10px 12px; font-size: 16px; border: 1px solid #bbb; border-radius: 8px; }
+    .error-msg { color: #b91c1c; font-weight: 600; font-size: 14px; margin-top: 6px; }
     .btn { padding: 12px 22px; font-size: 16px; font-weight: 600; border-radius: 8px; border: 1px solid #111; background: #111; color: #fff; cursor: pointer; }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .btn-secondary { background: #fff; color: #111; }
     .status { margin-top: 14px; font-weight: 600; color: #1d4ed8; }
 
     /* 3-back */
-    .nback-stage { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 280px; border: 1px solid #e5e7eb; border-radius: 10px; margin: 20px 0; background: #fafafa; }
+    .badge-phase { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: 700; margin-bottom: 8px; background: #e5e7eb; color: #111; }
+    .badge-phase.real { background: #dbeafe; color: #1e40af; }
+    .nback-stage { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 260px; border: 1px solid #e5e7eb; border-radius: 10px; margin: 16px 0 20px; background: #fafafa; }
     .stimulus { font-size: 96px; font-weight: 700; letter-spacing: 2px; min-height: 120px; display: flex; align-items: center; justify-content: center; }
-    .nback-progress { font-size: 14px; color: #555; margin-bottom: 8px; }
-    .feedback { min-height: 24px; font-size: 15px; font-weight: 600; margin-top: 8px; }
+    .nback-progress { font-size: 14px; color: #555; }
 
     /* Zegarki */
     .topbar { display: flex; justify-content: space-between; align-items: center; background: #f3f4f6; padding: 12px 18px; border-radius: 8px; margin-bottom: 14px; }
     .timer { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
     .canvas-wrap { text-align: center; overflow-x: auto; }
-    .canvas-box { position: relative; display: inline-block; max-width: 100%; border: 1px solid #ccc; background: #fff; }
+    .canvas-box { position: relative; display: inline-block; max-width: 100%; border: 1px solid #ccc; background: #fff; min-height: 200px; }
     #clockImg { display: block; max-width: 100%; height: auto; user-select: none; -webkit-user-drag: none; }
     #drawCanvas { position: absolute; left: 0; top: 0; cursor: crosshair; touch-action: none; z-index: 10; }
     .controls { margin-top: 16px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
@@ -35,30 +40,51 @@
 <body>
   <div class="container">
 
-    <!-- EKRAN 1: INSTRUKCJA 3-BACK -->
-    <section id="screen-3back-intro">
-      <h1>Część 1: Zadanie pamięciowe (3-back)</h1>
-      <p>Na ekranie będą pojawiać się pojedyncze litery. Twoim zadaniem jest reagować za każdym razem, gdy aktualnie wyświetlana litera jest <strong>taka sama jak litera pokazana 3 kroki wcześniej</strong>.</p>
-      <p>Jeśli litera powtarza się sprzed 3 kroków — naciśnij <strong>SPACJĘ</strong> lub kliknij przycisk <strong>„Zgodność (3 kroki wstecz)”</strong>. Jeśli nie jest taka sama, nie rób nic.</p>
-      <button class="btn" id="start3BackBtn">Rozpocznij zadanie 3-back</button>
+    <!-- EKRAN 0: NUMER BADANEGO -->
+    <section id="screen-id">
+      <h1>Witamy w badaniu</h1>
+      <p>Przed rozpoczęciem zadań wpisz swój indywidualny numer identyfikacyjny (ID) podany w ankiecie.</p>
+      <div class="input-group">
+        <label for="participantInput">Twój numer / ID badanego:</label>
+        <input type="text" id="participantInput" placeholder="np. 1042" autocomplete="off" />
+        <div id="idError" class="error-msg hidden">Wpisz swój numer identyfikacyjny, aby przejść dalej.</div>
+      </div>
+      <button class="btn" id="confirmIdBtn">Przejdź do instrukcji</button>
     </section>
 
-    <!-- EKRAN 2: PRZEBIEG 3-BACK -->
+    <!-- EKRAN 1: INSTRUKCJA 3-BACK (TRENING) -->
+    <section id="screen-3back-intro" class="hidden">
+      <h1>Część 1: Zadanie pamięciowe (3-back)</h1>
+      <p>Na ekranie będą pojawiać się pojedyncze litery. Twoim zadaniem jest reagować za każdym razem, gdy aktualnie wyświetlana litera jest <strong>taka sama jak litera pokazana 3 kroki wcześniej</strong>.</p>
+      <p>Jeśli litera powtarza się sprzed 3 kroków — naciśnij <strong>SPACJĘ</strong> lub kliknij przycisk <strong>„Zgodność (SPACJA)”</strong>. Jeśli nie jest taka sama, nie rób nic.</p>
+      <p><strong>Najpierw wykonasz krótką serię próbną (10 znaków)</strong>, której wynik nie jest zapisywany. W trakcie zadania nie będzie wyświetlana informacja o poprawności odpowiedzi.</p>
+      <button class="btn" id="startPracticeBtn">Rozpocznij serię próbną (10 znaków)</button>
+    </section>
+
+    <!-- EKRAN 2: PRZEBIEG 3-BACK (TRENING LUB TEST WŁAŚCIWY) -->
     <section id="screen-3back-run" class="hidden">
-      <div class="nback-progress" id="nbackProgress">Próba 1 / 30</div>
+      <div id="phaseBadge" class="badge-phase">SERIA PRÓBNA (niezapisywana)</div>
+      <div class="nback-progress" id="nbackProgress">Próba 1 / 10</div>
       <div class="nback-stage">
         <div class="stimulus" id="nbackStimulus">+</div>
-        <div class="feedback" id="nbackFeedback"></div>
       </div>
       <div style="text-align: center;">
         <button class="btn" id="matchBtn">Zgodność (SPACJA)</button>
       </div>
     </section>
 
+    <!-- EKRAN 2B: PRZERWA MIĘDZY TRENINGIEM A TESTEM WŁAŚCIWYM -->
+    <section id="screen-3back-real-intro" class="hidden">
+      <h1>Koniec serii próbnej</h1>
+      <p>Seria próbna dobiegła końca. Za chwilę rozpocznie się <strong>właściwe zadanie 3-back (30 znaków)</strong>, którego wynik zostanie zapisany.</p>
+      <p>Zasada pozostaje taka sama: reaguj (<strong>SPACJA</strong> lub przycisk), gdy litera jest taka sama jak <strong>3 kroki wcześniej</strong>.</p>
+      <button class="btn" id="startReal3BackBtn">Rozpocznij test właściwy (30 znaków)</button>
+    </section>
+
     <!-- EKRAN 3: INSTRUKCJA TESTU ZEGARKÓW -->
     <section id="screen-clock-intro" class="hidden">
       <h1>Część 2: Test zegarków</h1>
-      <p>Za chwilę zobaczysz arkusz z tarczami zegarów. Rysuj po nich kreski bezpośrednio myszką lub palcem na ekranie zgodnie z instrukcją badania.</p>
+      <p>Za chwilę zobaczysz arkusz z tarczami zegarów. Zaznaczaj tarcze rysując kreski bezpośrednio myszką lub palcem na ekranie zgodnie z instrukcją badania.</p>
       <p>Masz na to dokładnie <strong>2 minuty (02:00)</strong>. Po upływie czasu rysowanie zostanie automatycznie zablokowane i zapisane.</p>
       <button class="btn" id="startClockBtn">Rozpocznij test zegarków</button>
     </section>
@@ -69,9 +95,10 @@
         <div>Zaznaczaj tarcze rysując kreski bezpośrednio na obrazku</div>
         <div class="timer" id="clockTimer">02:00</div>
       </div>
+      <div id="imgErrorBox" class="error-msg hidden" style="margin-bottom: 12px;"></div>
       <div class="canvas-wrap">
         <div class="canvas-box">
-          <img id="clockImg" src="zegarki.jpg" alt="Arkusz testu zegarków" />
+          <img id="clockImg" alt="Arkusz testu zegarków" />
           <canvas id="drawCanvas"></canvas>
         </div>
       </div>
@@ -86,18 +113,23 @@
     <section id="screen-end" class="hidden">
       <h2>Dziękujemy! Oba zadania zostały zapisane.</h2>
       <p id="endSummary"></p>
-      <a id="returnLink" href="#" class="hidden"><button class="btn" type="button">Wróć do ankiety Qualtrics</button></a>
+      <a id="returnLink" href="#" class="hidden"><button class="btn" type="button">Wróć do ankiety</button></a>
     </section>
 
   </div>
 
   <script>
     // === KONFIGURACJA ===
-    const WEBHOOK_URL = "WSTAW_TUTAJ_SWOJ_LINK_WEB_APP_EXEC";
+    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyCMvwfdaH4KauUSg-a2I5q0p442eFd-ynHkWCohJCTH8knULUFskX-DymSYye-mVjm/exec";
     const RETURN_URL = "WSTAW_TUTAJ_LINK_POWROTNY_DO_QUALTRICS";
 
     const params = new URLSearchParams(window.location.search);
-    const participantId = params.get("id") || "brak_id";
+    let participantId = (params.get("id") || "").trim();
+
+    const participantInput = document.getElementById("participantInput");
+    if (participantId) {
+      participantInput.value = participantId;
+    }
 
     function showSection(id) {
       document.querySelectorAll("section").forEach(s => s.classList.add("hidden"));
@@ -105,27 +137,49 @@
     }
 
     async function postToSheet(payload) {
-      if (!WEBHOOK_URL.startsWith("http")) return;
+      if (!WEBHOOK_URL || !WEBHOOK_URL.startsWith("http")) {
+        console.warn("Brak poprawnego WEBHOOK_URL");
+        return false;
+      }
       try {
         await fetch(WEBHOOK_URL, {
           method: "POST",
           mode: "no-cors",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(payload)
         });
+        return true;
       } catch (e) {
         console.error("Błąd wysyłki:", e);
+        return false;
       }
     }
 
+    // Potwierdzenie ID badanego
+    document.getElementById("confirmIdBtn").onclick = () => {
+      const val = participantInput.value.trim();
+      const errEl = document.getElementById("idError");
+      if (!val) {
+        errEl.classList.remove("hidden");
+        return;
+      }
+      errEl.classList.add("hidden");
+      participantId = val;
+      showSection("screen-3back-intro");
+    };
+
     // ==========================================
-    // CZĘŚĆ 1: TEST 3-BACK
+    // CZĘŚĆ 1: TEST 3-BACK (10 PRÓBNYCH + 30 WŁAŚCIWYCH)
     // ==========================================
     const N_BACK = 3;
-    const TOTAL_TRIALS = 30;
+    const PRACTICE_TRIALS = 10;
+    const REAL_TRIALS = 30;
     const STIMULUS_MS = 800;
     const ISI_MS = 1700;
     const LETTERS = ["B", "C", "D", "G", "H", "K", "M", "P", "R", "S", "T"];
 
+    let isPracticeMode = true;
+    let totalTrialsCurrent = PRACTICE_TRIALS;
     let sequence = [];
     let currentTrial = -1;
     let trialStartTime = 0;
@@ -135,9 +189,9 @@
     let hits = 0, misses = 0, falseAlarms = 0, correctRejections = 0;
     let reactionTimes = [];
 
-    function generateSequence() {
+    function generateSequence(len) {
       const seq = [];
-      for (let i = 0; i < TOTAL_TRIALS; i++) {
+      for (let i = 0; i < len; i++) {
         const makeTarget = i >= N_BACK && Math.random() < 0.33;
         if (makeTarget) {
           seq.push(seq[i - N_BACK]);
@@ -157,17 +211,14 @@
       respondedThisTrial = true;
       const rt = Math.round(performance.now() - trialStartTime);
       const isTarget = currentTrial >= N_BACK && sequence[currentTrial] === sequence[currentTrial - N_BACK];
-      const fb = document.getElementById("nbackFeedback");
 
-      if (isTarget) {
-        hits++;
-        reactionTimes.push(rt);
-        fb.textContent = "Trafienie";
-        fb.style.color = "#15803d";
-      } else {
-        falseAlarms++;
-        fb.textContent = "Błędna reakcja";
-        fb.style.color = "#b91c1c";
+      if (!isPracticeMode) {
+        if (isTarget) {
+          hits++;
+          reactionTimes.push(rt);
+        } else {
+          falseAlarms++;
+        }
       }
     }
 
@@ -179,22 +230,48 @@
     });
     document.getElementById("matchBtn").onclick = registerNBackResponse;
 
+    function startNBackSession(practice) {
+      isPracticeMode = practice;
+      totalTrialsCurrent = practice ? PRACTICE_TRIALS : REAL_TRIALS;
+      sequence = generateSequence(totalTrialsCurrent);
+      currentTrial = -1;
+      hits = 0;
+      misses = 0;
+      falseAlarms = 0;
+      correctRejections = 0;
+      reactionTimes = [];
+      nbackActive = true;
+
+      const badge = document.getElementById("phaseBadge");
+      if (practice) {
+        badge.textContent = "SERIA PRÓBNA (wynik nie jest zapisywany)";
+        badge.classList.remove("real");
+      } else {
+        badge.textContent = "TEST WŁAŚCIWY";
+        badge.classList.add("real");
+      }
+
+      document.getElementById("nbackStimulus").textContent = "+";
+      document.getElementById("nbackProgress").textContent = `Próba 1 / ${totalTrialsCurrent}`;
+      showSection("screen-3back-run");
+      setTimeout(runNextTrial, 700);
+    }
+
     function runNextTrial() {
-      if (currentTrial >= 0 && !respondedThisTrial) {
+      if (!isPracticeMode && currentTrial >= 0 && !respondedThisTrial) {
         const wasTarget = currentTrial >= N_BACK && sequence[currentTrial] === sequence[currentTrial - N_BACK];
         if (wasTarget) misses++;
         else correctRejections++;
       }
 
       currentTrial++;
-      if (currentTrial >= TOTAL_TRIALS) {
-        finish3Back();
+      if (currentTrial >= totalTrialsCurrent) {
+        finishNBackSession();
         return;
       }
 
       respondedThisTrial = false;
-      document.getElementById("nbackProgress").textContent = `Próba ${currentTrial + 1} / ${TOTAL_TRIALS}`;
-      document.getElementById("nbackFeedback").textContent = "";
+      document.getElementById("nbackProgress").textContent = `Próba ${currentTrial + 1} / ${totalTrialsCurrent}`;
       const stimEl = document.getElementById("nbackStimulus");
       stimEl.textContent = sequence[currentTrial];
       trialStartTime = performance.now();
@@ -206,9 +283,15 @@
       setTimeout(runNextTrial, STIMULUS_MS + ISI_MS);
     }
 
-    async function finish3Back() {
+    async function finishNBackSession() {
       nbackActive = false;
-      const accuracyPct = Math.round(((hits + correctRejections) / TOTAL_TRIALS) * 100);
+
+      if (isPracticeMode) {
+        showSection("screen-3back-real-intro");
+        return;
+      }
+
+      const accuracyPct = Math.round(((hits + correctRejections) / REAL_TRIALS) * 100);
       const meanRtMs = reactionTimes.length
         ? Math.round(reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length)
         : 0;
@@ -216,7 +299,7 @@
       const summary = {
         timestampIso: new Date().toISOString(),
         participantId,
-        trialsTotal: TOTAL_TRIALS,
+        trialsTotal: REAL_TRIALS,
         hits,
         misses,
         falseAlarms,
@@ -229,15 +312,8 @@
       showSection("screen-clock-intro");
     }
 
-    document.getElementById("start3BackBtn").onclick = () => {
-      sequence = generateSequence();
-      currentTrial = -1;
-      hits = 0; misses = 0; falseAlarms = 0; correctRejections = 0;
-      reactionTimes = [];
-      nbackActive = true;
-      showSection("screen-3back-run");
-      setTimeout(runNextTrial, 600);
-    };
+    document.getElementById("startPracticeBtn").onclick = () => startNBackSession(true);
+    document.getElementById("startReal3BackBtn").onclick = () => startNBackSession(false);
 
     // ==========================================
     // CZĘŚĆ 2: TEST ZEGARKÓW MORONIA (120 SEKUND)
@@ -249,6 +325,28 @@
     const statusEl = document.getElementById("clockStatus");
     const finishClockBtn = document.getElementById("finishClockBtn");
     const undoBtn = document.getElementById("undoBtn");
+    const imgErrorBox = document.getElementById("imgErrorBox");
+
+    // Automatyczne szukanie grafiki zegarków w repozytorium pod najczęstszymi nazwami
+    const IMG_CANDIDATES = ["zegarki.jpg", "zegarki.png", "zegarki.jpeg", "Zegarki.jpg", "Zegarki.png", "Zegarki.jpeg"];
+    let candidateIdx = 0;
+
+    function loadClockImageWithFallback() {
+      img.onload = () => {
+        imgErrorBox.classList.add("hidden");
+        setupCanvas();
+      };
+      img.onerror = () => {
+        candidateIdx++;
+        if (candidateIdx < IMG_CANDIDATES.length) {
+          img.src = IMG_CANDIDATES[candidateIdx];
+        } else {
+          imgErrorBox.textContent = "Nie znaleziono pliku graficznego zegarków w repozytorium. Upewnij się, że wgrałaś plik o nazwie zegarki.jpg lub zegarki.png obok pliku index.html.";
+          imgErrorBox.classList.remove("hidden");
+        }
+      };
+      img.src = IMG_CANDIDATES[0];
+    }
 
     let drawing = false;
     let clockLocked = false;
@@ -351,14 +449,18 @@
       statusEl.textContent = "Zapisywanie rysunku na Dysk Google...";
 
       const merged = document.createElement("canvas");
-      merged.width = img.naturalWidth || canvas.width;
-      merged.height = img.naturalHeight || canvas.height;
+      merged.width = img.naturalWidth || canvas.width || 800;
+      merged.height = img.naturalHeight || canvas.height || 600;
       const mctx = merged.getContext("2d");
 
       mctx.fillStyle = "#ffffff";
       mctx.fillRect(0, 0, merged.width, merged.height);
-      mctx.drawImage(img, 0, 0, merged.width, merged.height);
-      mctx.drawImage(canvas, 0, 0, merged.width, merged.height);
+      if (img.complete && img.naturalWidth > 0) {
+        mctx.drawImage(img, 0, 0, merged.width, merged.height);
+      }
+      if (canvas.width > 0 && canvas.height > 0) {
+        mctx.drawImage(canvas, 0, 0, merged.width, merged.height);
+      }
 
       const imageBase64 = merged.toDataURL("image/jpeg", 0.8);
 
@@ -371,8 +473,8 @@
       });
 
       showSection("screen-end");
-      document.getElementById("endSummary").textContent = "Wyniki z obu zadań zostały przesłane.";
-      if (RETURN_URL.startsWith("http")) {
+      document.getElementById("endSummary").textContent = "Wyniki dla numeru ID: " + participantId + " zostały zapisane.";
+      if (RETURN_URL && RETURN_URL.startsWith("http")) {
         const ret = document.getElementById("returnLink");
         ret.href = RETURN_URL;
         ret.classList.remove("hidden");
@@ -382,9 +484,7 @@
     document.getElementById("startClockBtn").onclick = () => {
       showSection("screen-clock-run");
       clockStartMs = Date.now();
-      if (img.complete) setupCanvas();
-      else img.onload = setupCanvas;
-      setTimeout(setupCanvas, 100);
+      loadClockImageWithFallback();
 
       let left = 120;
       clockTimerId = setInterval(() => {
