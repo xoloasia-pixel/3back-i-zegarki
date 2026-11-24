@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Badanie poznawcze — 3-back i Test Zegarków</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 24px 16px; background: #f6f7f9; color: #111; }
+    .container { max-width: 960px; margin: 0 auto; background: #fff; border: 1px solid #e2e5e9; border-radius: 12px; padding: 28px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+    .hidden { display: none !important; }
+    h1, h2 { margin-top: 0; }
+    p { line-height: 1.55; }
+    .btn { padding: 12px 22px; font-size: 16px; font-weight: 600; border-radius: 8px; border: 1px solid #111; background: #111; color: #fff; cursor: pointer; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary { background: #fff; color: #111; }
+    .status { margin-top: 14px; font-weight: 600; color: #1d4ed8; }
+
+    /* 3-back */
+    .nback-stage { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 280px; border: 1px solid #e5e7eb; border-radius: 10px; margin: 20px 0; background: #fafafa; }
+    .stimulus { font-size: 96px; font-weight: 700; letter-spacing: 2px; min-height: 120px; display: flex; align-items: center; justify-content: center; }
+    .nback-progress { font-size: 14px; color: #555; margin-bottom: 8px; }
+    .feedback { min-height: 24px; font-size: 15px; font-weight: 600; margin-top: 8px; }
+
+    /* Zegarki */
+    .topbar { display: flex; justify-content: space-between; align-items: center; background: #f3f4f6; padding: 12px 18px; border-radius: 8px; margin-bottom: 14px; }
+    .timer { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .canvas-wrap { text-align: center; overflow-x: auto; }
+    .canvas-box { position: relative; display: inline-block; max-width: 100%; border: 1px solid #ccc; background: #fff; }
+    #clockImg { display: block; max-width: 100%; height: auto; user-select: none; -webkit-user-drag: none; }
+    #drawCanvas { position: absolute; left: 0; top: 0; cursor: crosshair; touch-action: none; z-index: 10; }
+    .controls { margin-top: 16px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- EKRAN 1: INSTRUKCJA 3-BACK -->
+    <section id="screen-3back-intro">
+      <h1>Część 1: Zadanie pamięciowe (3-back)</h1>
+      <p>Na ekranie będą pojawiać się pojedyncze litery. Twoim zadaniem jest reagować za każdym razem, gdy aktualnie wyświetlana litera jest <strong>taka sama jak litera pokazana 3 kroki wcześniej</strong>.</p>
+      <p>Jeśli litera powtarza się sprzed 3 kroków — naciśnij <strong>SPACJĘ</strong> lub kliknij przycisk <strong>„Zgodność (3 kroki wstecz)”</strong>. Jeśli nie jest taka sama, nie rób nic.</p>
+      <button class="btn" id="start3BackBtn">Rozpocznij zadanie 3-back</button>
+    </section>
+
+    <!-- EKRAN 2: PRZEBIEG 3-BACK -->
+    <section id="screen-3back-run" class="hidden">
+      <div class="nback-progress" id="nbackProgress">Próba 1 / 30</div>
+      <div class="nback-stage">
+        <div class="stimulus" id="nbackStimulus">+</div>
+        <div class="feedback" id="nbackFeedback"></div>
+      </div>
+      <div style="text-align: center;">
+        <button class="btn" id="matchBtn">Zgodność (SPACJA)</button>
+      </div>
+    </section>
+
+    <!-- EKRAN 3: INSTRUKCJA TESTU ZEGARKÓW -->
+    <section id="screen-clock-intro" class="hidden">
+      <h1>Część 2: Test zegarków</h1>
+      <p>Za chwilę zobaczysz arkusz z tarczami zegarów. Rysuj po nich kreski bezpośrednio myszką lub palcem na ekranie zgodnie z instrukcją badania.</p>
+      <p>Masz na to dokładnie <strong>2 minuty (02:00)</strong>. Po upływie czasu rysowanie zostanie automatycznie zablokowane i zapisane.</p>
+      <button class="btn" id="startClockBtn">Rozpocznij test zegarków</button>
+    </section>
+
+    <!-- EKRAN 4: PRZEBIEG TESTU ZEGARKÓW -->
+    <section id="screen-clock-run" class="hidden">
+      <div class="topbar">
+        <div>Zaznaczaj tarcze rysując kreski bezpośrednio na obrazku</div>
+        <div class="timer" id="clockTimer">02:00</div>
+      </div>
+      <div class="canvas-wrap">
+        <div class="canvas-box">
+          <img id="clockImg" src="zegarki.jpg" alt="Arkusz testu zegarków" />
+          <canvas id="drawCanvas"></canvas>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="btn btn-secondary" id="undoBtn">Cofnij ostatnią kreskę</button>
+        <button class="btn" id="finishClockBtn">Zakończ i zapisz rysunek</button>
+      </div>
+      <div class="status" id="clockStatus"></div>
+    </section>
+
+    <!-- EKRAN 5: ZAKOŃCZENIE -->
+    <section id="screen-end" class="hidden">
+      <h2>Dziękujemy! Oba zadania zostały zapisane.</h2>
+      <p id="endSummary"></p>
+      <a id="returnLink" href="#" class="hidden"><button class="btn" type="button">Wróć do ankiety Qualtrics</button></a>
+    </section>
+
+  </div>
+
+  <script>
+    // === KONFIGURACJA ===
+    const WEBHOOK_URL = "WSTAW_TUTAJ_SWOJ_LINK_WEB_APP_EXEC";
+    const RETURN_URL = "WSTAW_TUTAJ_LINK_POWROTNY_DO_QUALTRICS";
+
+    const params = new URLSearchParams(window.location.search);
+    const participantId = params.get("id") || "brak_id";
+
+    function showSection(id) {
+      document.querySelectorAll("section").forEach(s => s.classList.add("hidden"));
+      document.getElementById(id).classList.remove("hidden");
+    }
+
+    async function postToSheet(payload) {
+      if (!WEBHOOK_URL.startsWith("http")) return;
+      try {
+        await fetch(WEBHOOK_URL, {
+          method: "POST",
+          mode: "no-cors",
+          body: JSON.stringify(payload)
+        });
+      } catch (e) {
+        console.error("Błąd wysyłki:", e);
+      }
+    }
+
+    // ==========================================
+    // CZĘŚĆ 1: TEST 3-BACK
+    // ==========================================
+    const N_BACK = 3;
+    const TOTAL_TRIALS = 30;
+    const STIMULUS_MS = 800;
+    const ISI_MS = 1700;
+    const LETTERS = ["B", "C", "D", "G", "H", "K", "M", "P", "R", "S", "T"];
+
+    let sequence = [];
+    let currentTrial = -1;
+    let trialStartTime = 0;
+    let respondedThisTrial = false;
+    let nbackActive = false;
+
+    let hits = 0, misses = 0, falseAlarms = 0, correctRejections = 0;
+    let reactionTimes = [];
+
+    function generateSequence() {
+      const seq = [];
+      for (let i = 0; i < TOTAL_TRIALS; i++) {
+        const makeTarget = i >= N_BACK && Math.random() < 0.33;
+        if (makeTarget) {
+          seq.push(seq[i - N_BACK]);
+        } else {
+          let candidate;
+          do {
+            candidate = LETTERS[Math.floor(Math.random() * LETTERS.length)];
+          } while (i >= N_BACK && candidate === seq[i - N_BACK]);
+          seq.push(candidate);
+        }
+      }
+      return seq;
+    }
+
+    function registerNBackResponse() {
+      if (!nbackActive || respondedThisTrial || currentTrial < 0) return;
+      respondedThisTrial = true;
+      const rt = Math.round(performance.now() - trialStartTime);
+      const isTarget = currentTrial >= N_BACK && sequence[currentTrial] === sequence[currentTrial - N_BACK];
+      const fb = document.getElementById("nbackFeedback");
+
+      if (isTarget) {
+        hits++;
+        reactionTimes.push(rt);
+        fb.textContent = "Trafienie";
+        fb.style.color = "#15803d";
+      } else {
+        falseAlarms++;
+        fb.textContent = "Błędna reakcja";
+        fb.style.color = "#b91c1c";
+      }
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.code === "Space" && nbackActive) {
+        e.preventDefault();
+        registerNBackResponse();
+      }
+    });
+    document.getElementById("matchBtn").onclick = registerNBackResponse;
+
+    function runNextTrial() {
+      if (currentTrial >= 0 && !respondedThisTrial) {
+        const wasTarget = currentTrial >= N_BACK && sequence[currentTrial] === sequence[currentTrial - N_BACK];
+        if (wasTarget) misses++;
+        else correctRejections++;
+      }
+
+      currentTrial++;
+      if (currentTrial >= TOTAL_TRIALS) {
+        finish3Back();
+        return;
+      }
+
+      respondedThisTrial = false;
+      document.getElementById("nbackProgress").textContent = `Próba ${currentTrial + 1} / ${TOTAL_TRIALS}`;
+      document.getElementById("nbackFeedback").textContent = "";
+      const stimEl = document.getElementById("nbackStimulus");
+      stimEl.textContent = sequence[currentTrial];
+      trialStartTime = performance.now();
+
+      setTimeout(() => {
+        stimEl.textContent = "";
+      }, STIMULUS_MS);
+
+      setTimeout(runNextTrial, STIMULUS_MS + ISI_MS);
+    }
+
+    async function finish3Back() {
+      nbackActive = false;
+      const accuracyPct = Math.round(((hits + correctRejections) / TOTAL_TRIALS) * 100);
+      const meanRtMs = reactionTimes.length
+        ? Math.round(reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length)
+        : 0;
+
+      const summary = {
+        timestampIso: new Date().toISOString(),
+        participantId,
+        trialsTotal: TOTAL_TRIALS,
+        hits,
+        misses,
+        falseAlarms,
+        correctRejections,
+        accuracyPct,
+        meanRtMs
+      };
+
+      await postToSheet({ test: "3back", summary });
+      showSection("screen-clock-intro");
+    }
+
+    document.getElementById("start3BackBtn").onclick = () => {
+      sequence = generateSequence();
+      currentTrial = -1;
+      hits = 0; misses = 0; falseAlarms = 0; correctRejections = 0;
+      reactionTimes = [];
+      nbackActive = true;
+      showSection("screen-3back-run");
+      setTimeout(runNextTrial, 600);
+    };
+
+    // ==========================================
+    // CZĘŚĆ 2: TEST ZEGARKÓW MORONIA (120 SEKUND)
+    // ==========================================
+    const img = document.getElementById("clockImg");
+    const canvas = document.getElementById("drawCanvas");
+    const ctx = canvas.getContext("2d");
+    const timerEl = document.getElementById("clockTimer");
+    const statusEl = document.getElementById("clockStatus");
+    const finishClockBtn = document.getElementById("finishClockBtn");
+    const undoBtn = document.getElementById("undoBtn");
+
+    let drawing = false;
+    let clockLocked = false;
+    let strokes = [];
+    let currentStroke = [];
+    let clockStartMs = 0;
+    let clockTimerId = null;
+
+    function setupCanvas() {
+      const w = img.clientWidth;
+      const h = img.clientHeight;
+      if (!w || !h) return;
+      canvas.width = w;
+      canvas.height = h;
+      canvas.style.width = w + "px";
+      canvas.style.height = h + "px";
+      redrawAll();
+    }
+
+    function redrawAll() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = "#d90429";
+      ctx.lineWidth = 3;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+
+      for (const stroke of strokes) {
+        if (stroke.length < 2) continue;
+        ctx.beginPath();
+        ctx.moveTo(stroke[0].x, stroke[0].y);
+        for (let i = 1; i < stroke.length; i++) {
+          ctx.lineTo(stroke[i].x, stroke[i].y);
+        }
+        ctx.stroke();
+      }
+    }
+
+    window.addEventListener("resize", setupCanvas);
+
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches && e.touches.length ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches && e.touches.length ? e.touches[0].clientY : e.clientY;
+      return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    function startDraw(e) {
+      if (clockLocked) return;
+      e.preventDefault();
+      drawing = true;
+      const pos = getPos(e);
+      currentStroke = [pos];
+      ctx.strokeStyle = "#d90429";
+      ctx.lineWidth = 3;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+    }
+
+    function moveDraw(e) {
+      if (!drawing || clockLocked) return;
+      e.preventDefault();
+      const pos = getPos(e);
+      currentStroke.push(pos);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+    }
+
+    function endDraw() {
+      if (!drawing) return;
+      drawing = false;
+      ctx.closePath();
+      if (currentStroke.length > 0) {
+        strokes.push(currentStroke);
+        currentStroke = [];
+      }
+    }
+
+    canvas.addEventListener("mousedown", startDraw);
+    canvas.addEventListener("mousemove", moveDraw);
+    window.addEventListener("mouseup", endDraw);
+
+    canvas.addEventListener("touchstart", startDraw, { passive: false });
+    canvas.addEventListener("touchmove", moveDraw, { passive: false });
+    window.addEventListener("touchend", endDraw);
+
+    undoBtn.onclick = () => {
+      if (clockLocked || strokes.length === 0) return;
+      strokes.pop();
+      redrawAll();
+    };
+
+    async function finishClockTest() {
+      if (clockLocked) return;
+      clockLocked = true;
+      clearInterval(clockTimerId);
+      finishClockBtn.disabled = true;
+      undoBtn.disabled = true;
+      statusEl.textContent = "Zapisywanie rysunku na Dysk Google...";
+
+      const merged = document.createElement("canvas");
+      merged.width = img.naturalWidth || canvas.width;
+      merged.height = img.naturalHeight || canvas.height;
+      const mctx = merged.getContext("2d");
+
+      mctx.fillStyle = "#ffffff";
+      mctx.fillRect(0, 0, merged.width, merged.height);
+      mctx.drawImage(img, 0, 0, merged.width, merged.height);
+      mctx.drawImage(canvas, 0, 0, merged.width, merged.height);
+
+      const imageBase64 = merged.toDataURL("image/jpeg", 0.8);
+
+      await postToSheet({
+        test: "zegarki_obraz",
+        participantId,
+        timestampIso: new Date().toISOString(),
+        elapsedSec: Math.round((Date.now() - clockStartMs) / 1000),
+        imageBase64
+      });
+
+      showSection("screen-end");
+      document.getElementById("endSummary").textContent = "Wyniki z obu zadań zostały przesłane.";
+      if (RETURN_URL.startsWith("http")) {
+        const ret = document.getElementById("returnLink");
+        ret.href = RETURN_URL;
+        ret.classList.remove("hidden");
+      }
+    }
+
+    document.getElementById("startClockBtn").onclick = () => {
+      showSection("screen-clock-run");
+      clockStartMs = Date.now();
+      if (img.complete) setupCanvas();
+      else img.onload = setupCanvas;
+      setTimeout(setupCanvas, 100);
+
+      let left = 120;
+      clockTimerId = setInterval(() => {
+        left--;
+        const m = String(Math.floor(Math.max(left, 0) / 60)).padStart(2, "0");
+        const s = String(Math.max(left, 0) % 60).padStart(2, "0");
+        timerEl.textContent = `${m}:${s}`;
+        if (left <= 0) {
+          finishClockTest();
+        }
+      }, 1000);
+    };
+
+    finishClockBtn.onclick = finishClockTest;
+  </script>
+</body>
+</html>
