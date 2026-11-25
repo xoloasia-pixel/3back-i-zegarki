@@ -153,9 +153,9 @@
         await fetch(WEBHOOK_URL, {
           method: "POST",
           mode: "no-cors",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(payload)
         });
+        console.log("Wysłano payload:", payload.test, payload.participantId);
         return true;
       } catch (e) {
         console.error("Błąd wysyłki:", e);
@@ -316,9 +316,7 @@
         meanRtMs
       };
 
-      postToSheet({ test: "3back", summary }).catch(function (err) {
-        console.error("Błąd zapisu 3-back:", err);
-      });
+      await postToSheet({ test: "3back", summary });
 
       document.getElementById("done3BackId").textContent = participantId;
       showSection("screen-3back-done");
@@ -476,14 +474,12 @@
 
       const imageBase64 = merged.toDataURL("image/jpeg", 0.8);
 
-      postToSheet({
+      await postToSheet({
         test: "zegarki_obraz",
         participantId,
         timestampIso: new Date().toISOString(),
         elapsedSec: Math.round((Date.now() - clockStartMs) / 1000),
         imageBase64
-      }).catch(function (err) {
-        console.error("Błąd zapisu rysunku:", err);
       });
 
       showSection("screen-end");
@@ -505,8 +501,6 @@
         participantId,
         timestampIso: new Date().toISOString(),
         elapsedSec: 0
-      }).catch(function (err) {
-        console.error("Błąd zapisu startu zegarków:", err);
       });
 
       let left = 120;
