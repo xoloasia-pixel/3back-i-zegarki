@@ -43,11 +43,11 @@
     <!-- EKRAN 0: NUMER BADANEGO -->
     <section id="screen-id">
       <h1>Witamy w badaniu</h1>
-      <p>Przed rozpoczęciem zadań wpisz swój indywidualny numer identyfikacyjny (ID) podany w ankiecie.</p>
+      <p>Przed rozpoczęciem zadań wpisz swój indywidualny kod uczestnika podany w ankiecie.</p>
       <div class="input-group">
-        <label for="participantInput">Twój numer / ID badanego:</label>
+        <label for="participantInput">Twój numer / Kod badanego:</label>
         <input type="text" id="participantInput" placeholder="np. 1042" autocomplete="off" />
-        <div id="idError" class="error-msg hidden">Wpisz swój numer identyfikacyjny, aby przejść dalej.</div>
+        <div id="idError" class="error-msg hidden">Wpisz swój kod identyfikacyjny, aby przejść dalej.</div>
       </div>
       <button class="btn" id="confirmIdBtn">Przejdź do instrukcji</button>
     </section>
@@ -84,8 +84,8 @@
     <!-- EKRAN 3: INSTRUKCJA TESTU ZEGARKÓW -->
     <section id="screen-clock-intro" class="hidden">
       <h1>Część 2: Test zegarków</h1>
-      <p>Za chwilę zobaczysz arkusz z tarczami zegarów. Zaznaczaj tarcze rysując kreski bezpośrednio myszką lub palcem na ekranie zgodnie z instrukcją badania.</p>
-      <p>Masz na to dokładnie <strong>2 minuty (02:00)</strong>. Po upływie czasu rysowanie zostanie automatycznie zablokowane i zapisane.</p>
+      <p>Na następnej stronie znajdziesz wiele symboli przedstawiających godziny na zegarze. Twoim zadaniem będzie zaznaczenie prawym ukośnikiem / wszystkich symboli odpowiadających godzinie parzystej (np. 2, 6, 10), a lewym ukośnikiem \ wszystkich symboli odpowiadających godzinie nieparzystej (np. 1, 3, 7). Ale uwaga: nic nie robisz, gdy natrafisz na godzinę czwartą. Pamiętaj - powstrzymaj się od zakreślania, gdy natrafisz na godzinę czwartą. Zakreślaj tak, jak czytasz - w kolejnych rzędach, zaczynając od samej góry strony.</p>
+      <p>Masz na to dokładnie <strong>2 minuty (02:00)</strong>. Po upływie dwóch minut zaznacz pionową kreską, w którym miejscu skończyłeś(aś), zadanie zostanie automatycznie zablokowane i zapisane.</p>
       <button class="btn" id="startClockBtn">Rozpocznij test zegarków</button>
     </section>
 
