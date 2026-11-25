@@ -81,6 +81,14 @@
       <button class="btn" id="startReal3BackBtn">Rozpocznij test właściwy (30 znaków)</button>
     </section>
 
+    <!-- EKRAN 2C: ZAKOŃCZENIE CZĘŚCI 3-BACK -->
+    <section id="screen-3back-done" class="hidden">
+      <h1>Część 1 zakończona</h1>
+      <p>Zadanie 3-back zostało ukończone, a Twoje wyniki dla kodu <strong><span id="done3BackId"></span></strong> zostały przesłane do zapisu.</p>
+      <p>Za chwilę przejdziesz do instrukcji drugiej części badania (test zegarków).</p>
+      <button class="btn" id="goToClockIntroBtn">Przejdź do testu zegarków</button>
+    </section>
+
     <!-- EKRAN 3: INSTRUKCJA TESTU ZEGARKÓW -->
     <section id="screen-clock-intro" class="hidden">
       <h1>Część 2: Test zegarków</h1>
@@ -308,12 +316,17 @@
         meanRtMs
       };
 
-      await postToSheet({ test: "3back", summary });
-      showSection("screen-clock-intro");
+      postToSheet({ test: "3back", summary }).catch(function (err) {
+        console.error("Błąd zapisu 3-back:", err);
+      });
+
+      document.getElementById("done3BackId").textContent = participantId;
+      showSection("screen-3back-done");
     }
 
     document.getElementById("startPracticeBtn").onclick = () => startNBackSession(true);
     document.getElementById("startReal3BackBtn").onclick = () => startNBackSession(false);
+    document.getElementById("goToClockIntroBtn").onclick = () => showSection("screen-clock-intro");
 
     // ==========================================
     // CZĘŚĆ 2: TEST ZEGARKÓW MORONIA (120 SEKUND)
@@ -327,7 +340,6 @@
     const undoBtn = document.getElementById("undoBtn");
     const imgErrorBox = document.getElementById("imgErrorBox");
 
-    // Automatyczne szukanie grafiki zegarków w repozytorium pod najczęstszymi nazwami
     const IMG_CANDIDATES = ["zegarki.jpg", "zegarki.png", "zegarki.jpeg", "Zegarki.jpg", "Zegarki.png", "Zegarki.jpeg"];
     let candidateIdx = 0;
 
@@ -464,12 +476,14 @@
 
       const imageBase64 = merged.toDataURL("image/jpeg", 0.8);
 
-      await postToSheet({
+      postToSheet({
         test: "zegarki_obraz",
         participantId,
         timestampIso: new Date().toISOString(),
         elapsedSec: Math.round((Date.now() - clockStartMs) / 1000),
         imageBase64
+      }).catch(function (err) {
+        console.error("Błąd zapisu rysunku:", err);
       });
 
       showSection("screen-end");
@@ -485,6 +499,15 @@
       showSection("screen-clock-run");
       clockStartMs = Date.now();
       loadClockImageWithFallback();
+
+      postToSheet({
+        test: "zegarki_start",
+        participantId,
+        timestampIso: new Date().toISOString(),
+        elapsedSec: 0
+      }).catch(function (err) {
+        console.error("Błąd zapisu startu zegarków:", err);
+      });
 
       let left = 120;
       clockTimerId = setInterval(() => {
