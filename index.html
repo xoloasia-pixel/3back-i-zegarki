@@ -6,532 +6,647 @@
   <title>Badanie poznawcze — 3-back i Test Zegarków</title>
   <style>
     * { box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 24px 16px; background: #f6f7f9; color: #111; }
-    .container { max-width: 960px; margin: 0 auto; background: #fff; border: 1px solid #e2e5e9; border-radius: 12px; padding: 28px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      margin: 0;
+      padding: 24px;
+      background: #f6f7f9;
+      color: #111;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 12px;
+      padding: 28px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    }
     .hidden { display: none !important; }
     h1, h2 { margin-top: 0; }
     p { line-height: 1.55; }
     .input-group { margin: 20px 0; max-width: 360px; }
     .input-group label { display: block; font-weight: 600; margin-bottom: 6px; }
-    .input-group input { width: 100%; padding: 10px 12px; font-size: 16px; border: 1px solid #bbb; border-radius: 8px; }
+    .input-group input {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 16px;
+      border: 1px solid #bbb;
+      border-radius: 8px;
+    }
     .error-msg { color: #b91c1c; font-weight: 600; font-size: 14px; margin-top: 6px; }
-    .btn { padding: 12px 22px; font-size: 16px; font-weight: 600; border-radius: 8px; border: 1px solid #111; background: #111; color: #fff; cursor: pointer; }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-secondary { background: #fff; color: #111; }
-    .status { margin-top: 14px; font-weight: 600; color: #1d4ed8; }
+    .btn {
+      padding: 12px 22px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 8px;
+      border: 1px solid #111;
+      background: #111;
+      color: #fff;
+      cursor: pointer;
+    }
+    .btn:hover { background: #2b2b2b; }
+    .btn-secondary {
+      background: #fff;
+      color: #111;
+      border: 1px solid #999;
+    }
+    .btn-secondary:hover { background: #f0f0f0; }
 
     /* 3-back */
-    .badge-phase { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: 700; margin-bottom: 8px; background: #e5e7eb; color: #111; }
-    .badge-phase.real { background: #dbeafe; color: #1e40af; }
-    .nback-stage { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 260px; border: 1px solid #e5e7eb; border-radius: 10px; margin: 16px 0 20px; background: #fafafa; }
-    .stimulus { font-size: 96px; font-weight: 700; letter-spacing: 2px; min-height: 120px; display: flex; align-items: center; justify-content: center; }
-    .nback-progress { font-size: 14px; color: #555; }
+    .stimulus-box {
+      height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 96px;
+      font-weight: 700;
+      margin: 24px 0;
+      border: 2px dashed #ddd;
+      border-radius: 12px;
+      background: #fafafa;
+      user-select: none;
+    }
+    .controls-row {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      font-size: 15px;
+      color: #444;
+      margin-bottom: 12px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
 
     /* Zegarki */
-    .topbar { display: flex; justify-content: space-between; align-items: center; background: #f3f4f6; padding: 12px 18px; border-radius: 8px; margin-bottom: 14px; }
-    .timer { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
-    .canvas-wrap { text-align: center; overflow-x: auto; }
-    .canvas-box { position: relative; display: inline-block; max-width: 100%; border: 1px solid #ccc; background: #fff; min-height: 200px; }
-    #clockImg { display: block; max-width: 100%; height: auto; user-select: none; -webkit-user-drag: none; }
-    #drawCanvas { position: absolute; left: 0; top: 0; cursor: crosshair; touch-action: none; z-index: 10; }
-    .controls { margin-top: 16px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+    .clock-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+      padding: 10px 14px;
+      background: #f3f4f6;
+      border-radius: 8px;
+    }
+    .timer-badge {
+      font-weight: 700;
+      font-size: 18px;
+      color: #111;
+    }
+    .tool-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .tool-btn {
+      padding: 8px 14px;
+      font-size: 14px;
+      border-radius: 6px;
+      border: 1px solid #888;
+      background: #fff;
+      color: #111;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .tool-btn.active {
+      background: #111;
+      color: #fff;
+      border-color: #111;
+    }
+    .canvas-stage {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      border: 2px solid #333;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+      touch-action: none;
+    }
+    .canvas-stage canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    #bgCanvas { pointer-events: none; z-index: 1; }
+    #drawCanvas { z-index: 2; cursor: crosshair; }
   </style>
 </head>
 <body>
   <div class="container">
-
-    <!-- EKRAN 0: NUMER BADANEGO -->
-    <section id="screen-id">
-      <h1>Witamy w badaniu</h1>
-      <p>Przed rozpoczęciem zadań wpisz swój indywidualny kod uczestnika podany w ankiecie.</p>
+    <!-- EKRAN 0: POWITANIE I KOD BADANEGO -->
+    <section id="screen-intro">
+      <h1>Badanie poznawcze</h1>
+      <p>
+        Przed Tobą dwa krótkie zadania: <strong>zadanie pamięci roboczej (3-back)</strong>
+        oraz <strong>test rysowania zegarów</strong>. Wpisz swój kod badanego, aby rozpocząć.
+      </p>
       <div class="input-group">
-        <label for="participantInput">Twój numer / Kod badanego:</label>
-        <input type="text" id="participantInput" placeholder="np. 1042" autocomplete="off" />
-        <div id="idError" class="error-msg hidden">Wpisz swój kod identyfikacyjny, aby przejść dalej.</div>
+        <label for="participant-input">Kod badanego</label>
+        <input id="participant-input" type="text" placeholder="np. B01" autocomplete="off" />
+        <div id="participant-error" class="error-msg hidden">Podaj kod badanego przed rozpoczęciem.</div>
       </div>
-      <button class="btn" id="confirmIdBtn">Przejdź do instrukcji</button>
+      <button id="start-btn" class="btn">Rozpocznij badanie</button>
     </section>
 
-    <!-- EKRAN 1: INSTRUKCJA 3-BACK (TRENING) -->
+    <!-- EKRAN 1: INSTRUKCJA 3-BACK -->
     <section id="screen-3back-intro" class="hidden">
-      <h1>Część 1: Zadanie pamięciowe (3-back)</h1>
-      <p>Na ekranie będą pojawiać się pojedyncze litery. Twoim zadaniem jest reagować za każdym razem, gdy aktualnie wyświetlana litera jest <strong>taka sama jak litera pokazana 3 kroki wcześniej</strong>.</p>
-      <p>Jeśli litera powtarza się sprzed 3 kroków — naciśnij <strong>SPACJĘ</strong> lub kliknij przycisk <strong>„Zgodność (SPACJA)”</strong>. Jeśli nie jest taka sama, nie rób nic.</p>
-      <p><strong>Najpierw wykonasz krótką serię próbną (10 znaków)</strong>, której wynik nie jest zapisywany. W trakcie zadania nie będzie wyświetlana informacja o poprawności odpowiedzi.</p>
-      <button class="btn" id="startPracticeBtn">Rozpocznij serię próbną (10 znaków)</button>
+      <h2>Część 1: Zadanie 3-back</h2>
+      <p>
+        Na ekranie będą pojawiać się kolejno litery. Twoim zadaniem jest nacisnąć przycisk
+        <strong>„ZGODNA (3 wstecz)”</strong> (lub klawisz <strong>SPACJA</strong> / <strong>J</strong>),
+        gdy bieżąca litera jest <strong>taka sama jak litera wyświetlana 3 kroki wcześniej</strong>.
+      </p>
+      <p>Jeśli litera nie zgadza się z literą sprzed 3 kroków, nie naciskaj przycisku „ZGODNA”.</p>
+      <button id="begin-3back-btn" class="btn">Start 3-back</button>
     </section>
 
-    <!-- EKRAN 2: PRZEBIEG 3-BACK (TRENING LUB TEST WŁAŚCIWY) -->
+    <!-- EKRAN 2: PRZEBIEG 3-BACK -->
     <section id="screen-3back-run" class="hidden">
-      <div id="phaseBadge" class="badge-phase">SERIA PRÓBNA (niezapisywana)</div>
-      <div class="nback-progress" id="nbackProgress">Próba 1 / 10</div>
-      <div class="nback-stage">
-        <div class="stimulus" id="nbackStimulus">+</div>
+      <div class="status-bar">
+        <span>Badany: <strong id="hud-pid-3back"></strong></span>
+        <span>Próba: <strong id="hud-trial">0 / 0</strong></span>
+        <span id="hud-feedback"></span>
       </div>
-      <div style="text-align: center;">
-        <button class="btn" id="matchBtn">Zgodność (SPACJA)</button>
+      <div id="stimulus-box" class="stimulus-box">—</div>
+      <div class="controls-row">
+        <button id="match-btn" class="btn">ZGODNA (3 wstecz)</button>
       </div>
     </section>
 
-    <!-- EKRAN 2B: PRZERWA MIĘDZY TRENINGIEM A TESTEM WŁAŚCIWYM -->
-    <section id="screen-3back-real-intro" class="hidden">
-      <h1>Koniec serii próbnej</h1>
-      <p>Seria próbna dobiegła końca. Za chwilę rozpocznie się <strong>właściwe zadanie 3-back (30 znaków)</strong>, którego wynik zostanie zapisany.</p>
-      <p>Zasada pozostaje taka sama: reaguj (<strong>SPACJA</strong> lub przycisk), gdy litera jest taka sama jak <strong>3 kroki wcześniej</strong>.</p>
-      <button class="btn" id="startReal3BackBtn">Rozpocznij test właściwy (30 znaków)</button>
+    <!-- EKRAN 3: PRZEJŚCIE DO TESTU ZEGARKÓW -->
+    <section id="screen-between" class="hidden">
+      <h2>Część 1 zakończona</h2>
+      <p>
+        Dziękujemy za wykonanie zadania 3-back. Za chwilę przejdziesz do
+        <strong>testu zegarków</strong>.
+      </p>
+      <p>
+        Masz maksymalnie <strong>2 minuty (120 s)</strong>. Rysuj na planszy (myszką, rysikiem lub palcem),
+        a po zakończeniu kliknij <strong>„Zakończ i zapisz rysunek”</strong>.
+      </p>
+      <button id="begin-clock-btn" class="btn">Przejdź do testu zegarków</button>
     </section>
 
-    <!-- EKRAN 2C: ZAKOŃCZENIE CZĘŚCI 3-BACK -->
-    <section id="screen-3back-done" class="hidden">
-      <h1>Część 1 zakończona</h1>
-      <p>Zadanie 3-back zostało ukończone, a Twoje wyniki dla kodu <strong><span id="done3BackId"></span></strong> zostały przesłane do zapisu.</p>
-      <p>Kliknij przycisk poniżej, aby przejść do drugiej części badania (test zegarków).</p>
-      <button class="btn" id="goToClockIntroBtn">Przejdź do testu zegarków</button>
-    </section>
-
-    <!-- EKRAN 3: INSTRUKCJA TESTU ZEGARKÓW -->
-    <section id="screen-clock-intro" class="hidden">
-      <h1>Część 2: Test zegarków</h1>
-      <p>Na następnej stronie znajdziesz wiele symboli przedstawiających godziny na zegarze. Twoim zadaniem będzie zaznaczenie prawym ukośnikiem / wszystkich symboli odpowiadających godzinie parzystej (np. 2, 6, 10), a lewym ukośnikiem \ wszystkich symboli odpowiadających godzinie nieparzystej (np. 1, 3, 7). Ale uwaga: nic nie robisz, gdy natrafisz na godzinę czwartą. Pamiętaj - powstrzymaj się od zakreślania, gdy natrafisz na godzinę czwartą. Zakreślaj tak, jak czytasz - w kolejnych rzędach, zaczynając od samej góry strony.</p>
-      <p>Masz na to dokładnie <strong>2 minuty (02:00)</strong>. Po upływie dwóch minut zaznacz pionową kreską, w którym miejscu skończyłeś(aś), zadanie zostanie automatycznie zablokowane i zapisane.</p>
-      <button class="btn" id="startClockBtn">Rozpocznij test zegarków</button>
-    </section>
-
-    <!-- EKRAN 4: PRZEBIEG TESTU ZEGARKÓW -->
+    <!-- EKRAN 4: TEST ZEGARKÓW -->
     <section id="screen-clock-run" class="hidden">
-      <div class="topbar">
-        <div>Zaznaczaj tarcze rysując kreski bezpośrednio na obrazku</div>
-        <div class="timer" id="clockTimer">02:00</div>
+      <div class="clock-topbar">
+        <div>Badany: <strong id="hud-pid-clock"></strong></div>
+        <div class="timer-badge">Pozostały czas: <span id="clock-timer">02:00</span></div>
       </div>
-      <div id="imgErrorBox" class="error-msg hidden" style="margin-bottom: 12px;"></div>
-      <div class="canvas-wrap">
-        <div class="canvas-box">
-          <img id="clockImg" alt="Arkusz testu zegarków" />
-          <canvas id="drawCanvas"></canvas>
-        </div>
+
+      <div class="tool-row">
+        <button id="tool-pen" class="tool-btn active" type="button">Rysik (czarny)</button>
+        <button id="tool-red" class="tool-btn" type="button">Czerwony</button>
+        <button id="tool-eraser" class="tool-btn" type="button">Gumka</button>
+        <button id="tool-undo" class="tool-btn" type="button">Cofnij kreskę</button>
+        <button id="tool-clear" class="tool-btn" type="button">Wyczyść rysunek</button>
       </div>
-      <div class="controls">
-        <button class="btn btn-secondary" id="undoBtn">Cofnij ostatnią kreskę</button>
-        <button class="btn" id="finishClockBtn">Zakończ i zapisz rysunek</button>
+
+      <div id="canvas-stage" class="canvas-stage">
+        <canvas id="bgCanvas"></canvas>
+        <canvas id="drawCanvas"></canvas>
       </div>
-      <div class="status" id="clockStatus"></div>
+
+      <div class="controls-row" style="justify-content: flex-end; margin-top: 18px;">
+        <button id="finish-clock-btn" class="btn" type="button">Zakończ i zapisz rysunek</button>
+      </div>
     </section>
 
     <!-- EKRAN 5: ZAKOŃCZENIE -->
     <section id="screen-end" class="hidden">
-      <h2>Dziękujemy! Oba zadania zostały zapisane.</h2>
-      <p id="endSummary"></p>
-      <a id="returnLink" href="#" class="hidden"><button class="btn" type="button">Wróć do ankiety</button></a>
+      <h2>Dziękujemy! Oba zadania zostały zakończone.</h2>
+      <p>
+        Twój kod badanego: <strong id="end-pid"></strong>.
+        Wyniki są przekazywane do arkusza i na Dysk Google. Możesz zamknąć kartę przeglądarki.
+      </p>
     </section>
-
   </div>
 
   <script>
-    // === KONFIGURACJA ===
+    // Wklej tutaj swój aktualny link wdrożenia Google Apps Script zakończony na /exec
     const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzdajh0z_71Jy0ufXzxvwINEWgv1l5YHC-aMnignKDujAsmanClsJWOUC-GpPg42txY/exec";
-    const RETURN_URL = "WSTAW_TUTAJ_LINK_POWROTNY_DO_QUALTRICS";
 
-    const params = new URLSearchParams(window.location.search);
-    let participantId = (params.get("id") || "").trim();
+    // Kandydujące nazwy pliku obrazka w tym samym katalogu co index.html
+    const IMG_CANDIDATES = [
+      "./zegarki.png",
+      "zegarki.png",
+      "./zegarki.jpg",
+      "zegarki.jpg"
+    ];
 
-    const participantInput = document.getElementById("participantInput");
-    if (participantId) {
-      participantInput.value = participantId;
-    }
+    // Parametry 3-back
+    const N_BACK = 3;
+    const TOTAL_TRIALS = 30;
+    const STIMULUS_MS = 1400;
+    const ISI_MS = 600;
+    const LETTERS = ["B", "C", "D", "F", "G", "H", "K", "L", "M", "N", "P", "R", "S", "T"];
 
-    function showSection(id) {
-      document.querySelectorAll("section").forEach(s => s.classList.add("hidden"));
-      const target = document.getElementById(id);
-      if (target) target.classList.remove("hidden");
-    }
+    let participantId = "";
+    let currentSection = "screen-intro";
 
-    async function postToSheet(payload) {
-      if (!WEBHOOK_URL || !WEBHOOK_URL.startsWith("http")) {
-        console.warn("Brak poprawnego WEBHOOK_URL");
-        return false;
-      }
-      try {
-        await fetch(WEBHOOK_URL, {
-          method: "POST",
-          mode: "no-cors",
-          body: JSON.stringify(payload)
-        });
-        console.log("Wysłano payload:", payload.test, "ID:", payload.participantId || (payload.summary && payload.summary.participantId));
-        return true;
-      } catch (e) {
-        console.error("Błąd wysyłki:", e);
-        return false;
-      }
-    }
-
-    // Potwierdzenie ID badanego
-    document.getElementById("confirmIdBtn").onclick = () => {
-      const val = participantInput.value.trim();
-      const errEl = document.getElementById("idError");
-      if (!val) {
-        errEl.classList.remove("hidden");
-        return;
-      }
-      errEl.classList.add("hidden");
-      participantId = val;
-      showSection("screen-3back-intro");
+    // Stan 3-back
+    let sequence = [];
+    let trialIndex = 0;
+    let trialShownAt = 0;
+    let respondedThisTrial = false;
+    let trialTimerId = null;
+    let isiTimerId = null;
+    let stats = {
+      trialsTotal: 0,
+      hits: 0,
+      misses: 0,
+      falseAlarms: 0,
+      correctRejections: 0,
+      rts: []
     };
 
-    // ==========================================
-    // CZĘŚĆ 1: TEST 3-BACK (10 PRÓBNYCH + 30 WŁAŚCIWYCH)
-    // ==========================================
-    const N_BACK = 3;
-    const PRACTICE_TRIALS = 10;
-    const REAL_TRIALS = 30;
-    const STIMULUS_MS = 800;
-    const ISI_MS = 1700;
-    const LETTERS = ["B", "C", "D", "G", "H", "K", "M", "P", "R", "S", "T"];
+    // Stan testu zegarków
+    const bgCanvas = document.getElementById("bgCanvas");
+    const bgCtx = bgCanvas.getContext("2d");
+    const drawCanvas = document.getElementById("drawCanvas");
+    const drawCtx = drawCanvas.getContext("2d");
+    const stageEl = document.getElementById("canvas-stage");
 
-    let isPracticeMode = true;
-    let totalTrialsCurrent = PRACTICE_TRIALS;
-    let sequence = [];
-    let currentTrial = -1;
-    let trialStartTime = 0;
-    let respondedThisTrial = false;
-    let nbackActive = false;
-    let stimulusTimeoutId = null;
-    let nextTrialTimeoutId = null;
+    let clockBgImage = null;
+    let clockStartMs = 0;
+    let clockTimerId = null;
+    let clockFinished = false;
+    let currentTool = "pen";
+    let isDrawing = false;
+    let strokes = [];
+    let currentStroke = null;
 
-    let hits = 0, misses = 0, falseAlarms = 0, correctRejections = 0;
-    let reactionTimes = [];
-
-    function clearNBackTimers() {
-      if (stimulusTimeoutId) {
-        clearTimeout(stimulusTimeoutId);
-        stimulusTimeoutId = null;
-      }
-      if (nextTrialTimeoutId) {
-        clearTimeout(nextTrialTimeoutId);
-        nextTrialTimeoutId = null;
-      }
+    function showSection(id) {
+      const sections = [
+        "screen-intro",
+        "screen-3back-intro",
+        "screen-3back-run",
+        "screen-between",
+        "screen-clock-run",
+        "screen-end"
+      ];
+      sections.forEach(s => {
+        document.getElementById(s).classList.toggle("hidden", s !== id);
+      });
+      currentSection = id;
     }
 
-    function generateSequence(len) {
+    function postToSheet(payload) {
+      if (!WEBHOOK_URL || !WEBHOOK_URL.startsWith("https://script.google.com/")) {
+        console.warn("Brak poprawnego WEBHOOK_URL");
+        return Promise.resolve();
+      }
+      return fetch(WEBHOOK_URL, {
+        method: "POST",
+        mode: "no-cors",
+        body: JSON.stringify(payload)
+      })
+        .then(() => {
+          console.log("Wysłano payload:", payload.test);
+        })
+        .catch(err => {
+          console.error("Błąd wysyłki:", payload.test, err);
+        });
+    }
+
+    // --- EKRAN 0: START ---
+    const pidInput = document.getElementById("participant-input");
+    const pidError = document.getElementById("participant-error");
+    document.getElementById("start-btn").addEventListener("click", () => {
+      const val = pidInput.value.trim();
+      if (!val) {
+        pidError.classList.remove("hidden");
+        pidInput.focus();
+        return;
+      }
+      pidError.classList.add("hidden");
+      participantId = val;
+      document.getElementById("hud-pid-3back").textContent = participantId;
+      document.getElementById("hud-pid-clock").textContent = participantId;
+      document.getElementById("end-pid").textContent = participantId;
+      showSection("screen-3back-intro");
+    });
+
+    // --- CZĘŚĆ 1: 3-BACK ---
+    function generate3BackSequence(length) {
       const seq = [];
-      for (let i = 0; i < len; i++) {
-        const makeTarget = i >= N_BACK && Math.random() < 0.33;
-        if (makeTarget) {
+      for (let i = 0; i < length; i++) {
+        if (i >= N_BACK && Math.random() < 0.3) {
           seq.push(seq[i - N_BACK]);
         } else {
-          let candidate;
-          do {
-            candidate = LETTERS[Math.floor(Math.random() * LETTERS.length)];
-          } while (i >= N_BACK && candidate === seq[i - N_BACK]);
+          let candidate = LETTERS[Math.floor(Math.random() * LETTERS.length)];
+          if (i >= N_BACK && candidate === seq[i - N_BACK]) {
+            const others = LETTERS.filter(l => l !== seq[i - N_BACK]);
+            candidate = others[Math.floor(Math.random() * others.length)];
+          }
           seq.push(candidate);
         }
       }
       return seq;
     }
 
-    function registerNBackResponse() {
-      if (!nbackActive || respondedThisTrial || currentTrial < 0) return;
-      respondedThisTrial = true;
-      const rt = Math.round(performance.now() - trialStartTime);
-      const isTarget = currentTrial >= N_BACK && sequence[currentTrial] === sequence[currentTrial - N_BACK];
-
-      if (!isPracticeMode) {
-        if (isTarget) {
-          hits++;
-          reactionTimes.push(rt);
-        } else {
-          falseAlarms++;
-        }
-      }
+    function start3Back() {
+      sequence = generate3BackSequence(TOTAL_TRIALS);
+      trialIndex = 0;
+      stats = {
+        trialsTotal: TOTAL_TRIALS,
+        hits: 0,
+        misses: 0,
+        falseAlarms: 0,
+        correctRejections: 0,
+        rts: []
+      };
+      showSection("screen-3back-run");
+      runNextTrial();
     }
 
-    document.addEventListener("keydown", (e) => {
-      if (e.code === "Space" && nbackActive) {
-        e.preventDefault();
-        registerNBackResponse();
-      }
-    });
-    document.getElementById("matchBtn").onclick = registerNBackResponse;
-
-    function startNBackSession(practice) {
-      clearNBackTimers();
-      isPracticeMode = practice;
-      totalTrialsCurrent = practice ? PRACTICE_TRIALS : REAL_TRIALS;
-      sequence = generateSequence(totalTrialsCurrent);
-      currentTrial = -1;
-      hits = 0;
-      misses = 0;
-      falseAlarms = 0;
-      correctRejections = 0;
-      reactionTimes = [];
-      nbackActive = true;
-
-      const badge = document.getElementById("phaseBadge");
-      if (practice) {
-        badge.textContent = "SERIA PRÓBNA (wynik nie jest zapisywany)";
-        badge.classList.remove("real");
+    function finalizeCurrentTrial() {
+      if (trialIndex < 0 || trialIndex >= sequence.length) return;
+      const isTarget = trialIndex >= N_BACK && sequence[trialIndex] === sequence[trialIndex - N_BACK];
+      if (respondedThisTrial) {
+        if (isTarget) stats.hits++;
+        else stats.falseAlarms++;
       } else {
-        badge.textContent = "TEST WŁAŚCIWY";
-        badge.classList.add("real");
+        if (isTarget) stats.misses++;
+        else stats.correctRejections++;
       }
-
-      document.getElementById("nbackStimulus").textContent = "+";
-      document.getElementById("nbackProgress").textContent = `Próba 1 / ${totalTrialsCurrent}`;
-      showSection("screen-3back-run");
-      nextTrialTimeoutId = setTimeout(runNextTrial, 700);
     }
 
     function runNextTrial() {
-      clearNBackTimers();
+      clearTimeout(trialTimerId);
+      clearTimeout(isiTimerId);
 
-      if (!isPracticeMode && currentTrial >= 0 && !respondedThisTrial) {
-        const wasTarget = currentTrial >= N_BACK && sequence[currentTrial] === sequence[currentTrial - N_BACK];
-        if (wasTarget) misses++;
-        else correctRejections++;
-      }
-
-      currentTrial++;
-      if (currentTrial >= totalTrialsCurrent) {
-        finishNBackSession();
+      if (trialIndex >= TOTAL_TRIALS) {
+        finish3Back();
         return;
       }
 
       respondedThisTrial = false;
-      document.getElementById("nbackProgress").textContent = `Próba ${currentTrial + 1} / ${totalTrialsCurrent}`;
-      const stimEl = document.getElementById("nbackStimulus");
-      stimEl.textContent = sequence[currentTrial];
-      trialStartTime = performance.now();
+      const letter = sequence[trialIndex];
+      document.getElementById("hud-trial").textContent = `${trialIndex + 1} / ${TOTAL_TRIALS}`;
+      document.getElementById("hud-feedback").textContent = "";
+      document.getElementById("stimulus-box").textContent = letter;
+      trialShownAt = performance.now();
 
-      stimulusTimeoutId = setTimeout(() => {
-        stimEl.textContent = "";
+      trialTimerId = setTimeout(() => {
+        document.getElementById("stimulus-box").textContent = "";
+        isiTimerId = setTimeout(() => {
+          finalizeCurrentTrial();
+          trialIndex++;
+          runNextTrial();
+        }, ISI_MS);
       }, STIMULUS_MS);
-
-      nextTrialTimeoutId = setTimeout(runNextTrial, STIMULUS_MS + ISI_MS);
     }
 
-    function finishNBackSession() {
-      clearNBackTimers();
-      nbackActive = false;
+    function handleMatchResponse() {
+      if (currentSection !== "screen-3back-run") return;
+      if (respondedThisTrial) return;
+      respondedThisTrial = true;
+      const rt = Math.round(performance.now() - trialShownAt);
+      stats.rts.push(rt);
+      document.getElementById("hud-feedback").textContent = "Zarejestrowano";
+    }
 
-      if (isPracticeMode) {
-        showSection("screen-3back-real-intro");
-        return;
-      }
-
-      const accuracyPct = Math.round(((hits + correctRejections) / REAL_TRIALS) * 100);
-      const meanRtMs = reactionTimes.length
-        ? Math.round(reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length)
+    function finish3Back() {
+      const totalTargetsAndNonTargets = stats.hits + stats.misses + stats.falseAlarms + stats.correctRejections;
+      const correctTotal = stats.hits + stats.correctRejections;
+      const accuracyPct = totalTargetsAndNonTargets > 0
+        ? Math.round((correctTotal / totalTargetsAndNonTargets) * 100)
+        : 0;
+      const meanRtMs = stats.rts.length > 0
+        ? Math.round(stats.rts.reduce((a, b) => a + b, 0) / stats.rts.length)
         : 0;
 
       const summary = {
         timestampIso: new Date().toISOString(),
         participantId,
-        trialsTotal: REAL_TRIALS,
-        hits,
-        misses,
-        falseAlarms,
-        correctRejections,
+        trialsTotal: stats.trialsTotal,
+        hits: stats.hits,
+        misses: stats.misses,
+        falseAlarms: stats.falseAlarms,
+        correctRejections: stats.correctRejections,
         accuracyPct,
         meanRtMs
       };
 
-      const doneIdEl = document.getElementById("done3BackId");
-      if (doneIdEl) doneIdEl.textContent = participantId;
-      showSection("screen-3back-done");
-
-      postToSheet({ test: "3back", summary }).catch((err) => {
-        console.error("Błąd zapisu 3-back:", err);
-      });
+      postToSheet({ test: "3back", summary });
+      showSection("screen-between");
     }
 
-    document.getElementById("startPracticeBtn").onclick = () => startNBackSession(true);
-    document.getElementById("startReal3BackBtn").onclick = () => startNBackSession(false);
-    document.getElementById("goToClockIntroBtn").onclick = () => showSection("screen-clock-intro");
+    document.getElementById("begin-3back-btn").addEventListener("click", start3Back);
+    document.getElementById("match-btn").addEventListener("click", handleMatchResponse);
+    document.addEventListener("keydown", e => {
+      if (currentSection === "screen-3back-run" && (e.code === "Space" || e.key.toLowerCase() === "j")) {
+        e.preventDefault();
+        handleMatchResponse();
+      }
+    });
 
-    // ==========================================
-    // CZĘŚĆ 2: TEST ZEGARKÓW MORONIA (120 SEKUND)
-    // ==========================================
-    const img = document.getElementById("clockImg");
-    const canvas = document.getElementById("drawCanvas");
-    const ctx = canvas.getContext("2d");
-    const timerEl = document.getElementById("clockTimer");
-    const statusEl = document.getElementById("clockStatus");
-    const finishClockBtn = document.getElementById("finishClockBtn");
-    const undoBtn = document.getElementById("undoBtn");
-    const imgErrorBox = document.getElementById("imgErrorBox");
-
-    const IMG_CANDIDATES = ["zegarki.jpg", "zegarki.png", "zegarki.jpeg", "Zegarki.jpg", "Zegarki.png", "Zegarki.jpeg"];
-    let candidateIdx = 0;
-
-    function loadClockImageWithFallback() {
-      candidateIdx = 0;
-      img.onload = () => {
-        imgErrorBox.classList.add("hidden");
-        setupCanvas();
-      };
-      img.onerror = () => {
-        candidateIdx++;
-        if (candidateIdx < IMG_CANDIDATES.length) {
-          img.src = IMG_CANDIDATES[candidateIdx];
-        } else {
-          imgErrorBox.textContent = "Nie znaleziono pliku graficznego zegarków w repozytorium. Upewnij się, że wgrałaś plik o nazwie zegarki.jpg lub zegarki.png obok pliku index.html.";
-          imgErrorBox.classList.remove("hidden");
-        }
-      };
-      img.src = IMG_CANDIDATES[0];
+    // --- CZĘŚĆ 2: TEST ZEGARKÓW ---
+    function syncCanvasSizes() {
+      const rect = stageEl.getBoundingClientRect();
+      const w = Math.max(300, Math.round(rect.width));
+      const h = Math.max(225, Math.round(rect.height));
+      if (bgCanvas.width !== w || bgCanvas.height !== h) {
+        bgCanvas.width = w;
+        bgCanvas.height = h;
+        drawCanvas.width = w;
+        drawCanvas.height = h;
+        redrawBackground();
+        redrawStrokes();
+      }
     }
 
-    let drawing = false;
-    let clockLocked = false;
-    let strokes = [];
-    let currentStroke = [];
-    let clockStartMs = 0;
-    let clockTimerId = null;
-
-    function setupCanvas() {
-      const w = img.clientWidth;
-      const h = img.clientHeight;
-      if (!w || !h) return;
-      canvas.width = w;
-      canvas.height = h;
-      canvas.style.width = w + "px";
-      canvas.style.height = h + "px";
-      redrawAll();
+    function redrawBackground() {
+      bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+      bgCtx.fillStyle = "#ffffff";
+      bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
+      if (clockBgImage) {
+        const scale = Math.min(bgCanvas.width / clockBgImage.width, bgCanvas.height / clockBgImage.height);
+        const dw = clockBgImage.width * scale;
+        const dh = clockBgImage.height * scale;
+        const dx = (bgCanvas.width - dw) / 2;
+        const dy = (bgCanvas.height - dh) / 2;
+        bgCtx.drawImage(clockBgImage, dx, dy, dw, dh);
+      }
     }
 
-    function redrawAll() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.strokeStyle = "#d90429";
-      ctx.lineWidth = 3;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
+    function redrawStrokes() {
+      drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+      drawCtx.lineCap = "round";
+      drawCtx.lineJoin = "round";
 
       for (const stroke of strokes) {
-        if (stroke.length < 2) continue;
-        ctx.beginPath();
-        ctx.moveTo(stroke[0].x, stroke[0].y);
-        for (let i = 1; i < stroke.length; i++) {
-          ctx.lineTo(stroke[i].x, stroke[i].y);
+        if (!stroke.points || stroke.points.length === 0) continue;
+        drawCtx.save();
+        if (stroke.tool === "eraser") {
+          drawCtx.globalCompositeOperation = "destination-out";
+          drawCtx.strokeStyle = "rgba(0,0,0,1)";
+          drawCtx.lineWidth = 24;
+        } else {
+          drawCtx.globalCompositeOperation = "source-over";
+          drawCtx.strokeStyle = stroke.tool === "red" ? "#dc2626" : "#111111";
+          drawCtx.lineWidth = 3.5;
         }
-        ctx.stroke();
+        drawCtx.beginPath();
+        drawCtx.moveTo(stroke.points[0].x * drawCanvas.width, stroke.points[0].y * drawCanvas.height);
+        for (let i = 1; i < stroke.points.length; i++) {
+          drawCtx.lineTo(stroke.points[i].x * drawCanvas.width, stroke.points[i].y * drawCanvas.height);
+        }
+        if (stroke.points.length === 1) {
+          drawCtx.lineTo(stroke.points[0].x * drawCanvas.width + 0.1, stroke.points[0].y * drawCanvas.height + 0.1);
+        }
+        drawCtx.stroke();
+        drawCtx.restore();
       }
     }
 
-    window.addEventListener("resize", setupCanvas);
-
-    function getPos(e) {
-      const rect = canvas.getBoundingClientRect();
-      const clientX = e.touches && e.touches.length ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches && e.touches.length ? e.touches[0].clientY : e.clientY;
-      return { x: clientX - rect.left, y: clientY - rect.top };
+    function getNormalizedPoint(e) {
+      const rect = drawCanvas.getBoundingClientRect();
+      return {
+        x: Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width)),
+        y: Math.min(1, Math.max(0, (e.clientY - rect.top) / rect.height))
+      };
     }
 
-    function startDraw(e) {
-      if (clockLocked) return;
-      e.preventDefault();
-      drawing = true;
-      const pos = getPos(e);
-      currentStroke = [pos];
-      ctx.strokeStyle = "#d90429";
-      ctx.lineWidth = 3;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.beginPath();
-      ctx.moveTo(pos.x, pos.y);
-    }
+    drawCanvas.addEventListener("pointerdown", e => {
+      if (clockFinished) return;
+      drawCanvas.setPointerCapture(e.pointerId);
+      isDrawing = true;
+      currentStroke = { tool: currentTool, points: [getNormalizedPoint(e)] };
+      strokes.push(currentStroke);
+      redrawStrokes();
+    });
 
-    function moveDraw(e) {
-      if (!drawing || clockLocked) return;
-      e.preventDefault();
-      const pos = getPos(e);
-      currentStroke.push(pos);
-      ctx.lineTo(pos.x, pos.y);
-      ctx.stroke();
-    }
+    drawCanvas.addEventListener("pointermove", e => {
+      if (!isDrawing || !currentStroke || clockFinished) return;
+      currentStroke.points.push(getNormalizedPoint(e));
+      redrawStrokes();
+    });
 
-    function endDraw() {
-      if (!drawing) return;
-      drawing = false;
-      ctx.closePath();
-      if (currentStroke.length > 0) {
-        strokes.push(currentStroke);
-        currentStroke = [];
+    function endStroke(e) {
+      if (!isDrawing) return;
+      isDrawing = false;
+      currentStroke = null;
+      if (e && drawCanvas.hasPointerCapture(e.pointerId)) {
+        drawCanvas.releasePointerCapture(e.pointerId);
       }
     }
 
-    canvas.addEventListener("mousedown", startDraw);
-    canvas.addEventListener("mousemove", moveDraw);
-    window.addEventListener("mouseup", endDraw);
+    drawCanvas.addEventListener("pointerup", endStroke);
+    drawCanvas.addEventListener("pointercancel", endStroke);
 
-    canvas.addEventListener("touchstart", startDraw, { passive: false });
-    canvas.addEventListener("touchmove", moveDraw, { passive: false });
-    window.addEventListener("touchend", endDraw);
+    function setTool(tool) {
+      currentTool = tool;
+      document.getElementById("tool-pen").classList.toggle("active", tool === "pen");
+      document.getElementById("tool-red").classList.toggle("active", tool === "red");
+      document.getElementById("tool-eraser").classList.toggle("active", tool === "eraser");
+    }
 
-    undoBtn.onclick = () => {
-      if (clockLocked || strokes.length === 0) return;
+    document.getElementById("tool-pen").addEventListener("click", () => setTool("pen"));
+    document.getElementById("tool-red").addEventListener("click", () => setTool("red"));
+    document.getElementById("tool-eraser").addEventListener("click", () => setTool("eraser"));
+    document.getElementById("tool-undo").addEventListener("click", () => {
+      if (clockFinished) return;
       strokes.pop();
-      redrawAll();
-    };
+      redrawStrokes();
+    });
+    document.getElementById("tool-clear").addEventListener("click", () => {
+      if (clockFinished) return;
+      strokes = [];
+      redrawStrokes();
+    });
 
-    async function finishClockTest() {
-      if (clockLocked) return;
-      clockLocked = true;
-      if (clockTimerId) {
-        clearInterval(clockTimerId);
-        clockTimerId = null;
+    window.addEventListener("resize", () => {
+      if (currentSection === "screen-clock-run") {
+        syncCanvasSizes();
       }
-      finishClockBtn.disabled = true;
-      undoBtn.disabled = true;
-      statusEl.textContent = "Zapisywanie rysunku na Dysk Google...";
+    });
+
+    function loadClockImageWithFallback() {
+      let idx = 0;
+      function tryNext() {
+        if (idx >= IMG_CANDIDATES.length) {
+          redrawBackground();
+          return;
+        }
+        const candidate = IMG_CANDIDATES[idx++];
+        const img = new Image();
+        img.onload = () => {
+          clockBgImage = img;
+          redrawBackground();
+        };
+        img.onerror = tryNext;
+        img.src = candidate;
+      }
+      tryNext();
+    }
+
+    function exportCompressedImageBase64() {
+      syncCanvasSizes();
+      const maxWidth = 1200;
+      const scale = bgCanvas.width > maxWidth ? maxWidth / bgCanvas.width : 1;
+      const outW = Math.round(bgCanvas.width * scale);
+      const outH = Math.round(bgCanvas.height * scale);
 
       const merged = document.createElement("canvas");
-      merged.width = img.naturalWidth || canvas.width || 800;
-      merged.height = img.naturalHeight || canvas.height || 600;
-      const mctx = merged.getContext("2d");
+      merged.width = outW;
+      merged.height = outH;
+      const mCtx = merged.getContext("2d");
+      mCtx.fillStyle = "#ffffff";
+      mCtx.fillRect(0, 0, outW, outH);
+      mCtx.drawImage(bgCanvas, 0, 0, outW, outH);
+      mCtx.drawImage(drawCanvas, 0, 0, outW, outH);
 
-      mctx.fillStyle = "#ffffff";
-      mctx.fillRect(0, 0, merged.width, merged.height);
-      if (img.complete && img.naturalWidth > 0) {
-        mctx.drawImage(img, 0, 0, merged.width, merged.height);
+      try {
+        return merged.toDataURL("image/jpeg", 0.65);
+      } catch (err) {
+        console.error("Błąd eksportu obrazka:", err);
+        return "";
       }
-      if (canvas.width > 0 && canvas.height > 0) {
-        mctx.drawImage(canvas, 0, 0, merged.width, merged.height);
-      }
+    }
 
-      const imageBase64 = merged.toDataURL("image/jpeg", 0.8);
+    function finishClockTest() {
+      if (clockFinished) return;
+      clockFinished = true;
+      clearInterval(clockTimerId);
 
-      await postToSheet({
+      const elapsedSec = clockStartMs > 0
+        ? Math.min(120, Math.round((Date.now() - clockStartMs) / 1000))
+        : 0;
+      const imageBase64 = exportCompressedImageBase64();
+
+      // Najpierw przełączamy ekran, aby interfejs nigdy nie utknął na zapisie
+      showSection("screen-end");
+
+      postToSheet({
         test: "zegarki_obraz",
         participantId,
         timestampIso: new Date().toISOString(),
-        elapsedSec: Math.round((Date.now() - clockStartMs) / 1000),
+        elapsedSec,
         imageBase64
       });
-
-      showSection("screen-end");
-      document.getElementById("endSummary").textContent = "Wyniki dla numeru ID: " + participantId + " zostały zapisane.";
-      if (RETURN_URL && RETURN_URL.startsWith("http")) {
-        const ret = document.getElementById("returnLink");
-        ret.href = RETURN_URL;
-        ret.classList.remove("hidden");
-      }
     }
 
-    document.getElementById("startClockBtn").onclick = () => {
-      if (clockTimerId) {
-        clearInterval(clockTimerId);
-        clockTimerId = null;
-      }
-      clockLocked = false;
+    document.getElementById("begin-clock-btn").addEventListener("click", () => {
+      clockFinished = false;
       strokes = [];
-      currentStroke = [];
-      finishClockBtn.disabled = false;
-      undoBtn.disabled = false;
-      statusEl.textContent = "";
-      timerEl.textContent = "02:00";
-
       showSection("screen-clock-run");
-      clockStartMs = Date.now();
+      syncCanvasSizes();
       loadClockImageWithFallback();
+      clockStartMs = Date.now();
 
       postToSheet({
         test: "zegarki_start",
@@ -540,7 +655,10 @@
         elapsedSec: 0
       });
 
+      const timerEl = document.getElementById("clock-timer");
+      timerEl.textContent = "02:00";
       let left = 120;
+      clearInterval(clockTimerId);
       clockTimerId = setInterval(() => {
         left--;
         const m = String(Math.floor(Math.max(left, 0) / 60)).padStart(2, "0");
@@ -550,9 +668,9 @@
           finishClockTest();
         }
       }, 1000);
-    };
+    });
 
-    finishClockBtn.onclick = finishClockTest;
+    document.getElementById("finish-clock-btn").addEventListener("click", finishClockTest);
   </script>
 </body>
 </html>
