@@ -85,7 +85,7 @@
     <section id="screen-3back-done" class="hidden">
       <h1>Część 1 zakończona</h1>
       <p>Zadanie 3-back zostało ukończone, a Twoje wyniki dla kodu <strong><span id="done3BackId"></span></strong> zostały przesłane do zapisu.</p>
-      <p>Za chwilę przejdziesz do instrukcji drugiej części badania (test zegarków).</p>
+      <p>Kliknij przycisk poniżej, aby przejść do drugiej części badania (test zegarków).</p>
       <button class="btn" id="goToClockIntroBtn">Przejdź do testu zegarków</button>
     </section>
 
@@ -141,7 +141,8 @@
 
     function showSection(id) {
       document.querySelectorAll("section").forEach(s => s.classList.add("hidden"));
-      document.getElementById(id).classList.remove("hidden");
+      const target = document.getElementById(id);
+      if (target) target.classList.remove("hidden");
     }
 
     async function postToSheet(payload) {
@@ -153,9 +154,9 @@
         await fetch(WEBHOOK_URL, {
           method: "POST",
           mode: "no-cors",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(payload)
         });
+        console.log("Wysłano payload:", payload.test, "ID:", payload.participantId || (payload.summary && payload.summary.participantId));
         return true;
       } catch (e) {
         console.error("Błąd wysyłki:", e);
@@ -193,9 +194,22 @@
     let trialStartTime = 0;
     let respondedThisTrial = false;
     let nbackActive = false;
+    let stimulusTimeoutId = null;
+    let nextTrialTimeoutId = null;
 
     let hits = 0, misses = 0, falseAlarms = 0, correctRejections = 0;
     let reactionTimes = [];
+
+    function clearNBackTimers() {
+      if (stimulusTimeoutId) {
+        clearTimeout(stimulusTimeoutId);
+        stimulusTimeoutId = null;
+      }
+      if (nextTrialTimeoutId) {
+        clearTimeout(nextTrialTimeoutId);
+        nextTrialTimeoutId = null;
+      }
+    }
 
     function generateSequence(len) {
       const seq = [];
@@ -239,6 +253,7 @@
     document.getElementById("matchBtn").onclick = registerNBackResponse;
 
     function startNBackSession(practice) {
+      clearNBackTimers();
       isPracticeMode = practice;
       totalTrialsCurrent = practice ? PRACTICE_TRIALS : REAL_TRIALS;
       sequence = generateSequence(totalTrialsCurrent);
@@ -262,10 +277,12 @@
       document.getElementById("nbackStimulus").textContent = "+";
       document.getElementById("nbackProgress").textContent = `Próba 1 / ${totalTrialsCurrent}`;
       showSection("screen-3back-run");
-      setTimeout(runNextTrial, 700);
+      nextTrialTimeoutId = setTimeout(runNextTrial, 700);
     }
 
     function runNextTrial() {
+      clearNBackTimers();
+
       if (!isPracticeMode && currentTrial >= 0 && !respondedThisTrial) {
         const wasTarget = currentTrial >= N_BACK && sequence[currentTrial] === sequence[currentTrial - N_BACK];
         if (wasTarget) misses++;
@@ -284,14 +301,15 @@
       stimEl.textContent = sequence[currentTrial];
       trialStartTime = performance.now();
 
-      setTimeout(() => {
+      stimulusTimeoutId = setTimeout(() => {
         stimEl.textContent = "";
       }, STIMULUS_MS);
 
-      setTimeout(runNextTrial, STIMULUS_MS + ISI_MS);
+      nextTrialTimeoutId = setTimeout(runNextTrial, STIMULUS_MS + ISI_MS);
     }
 
-    async function finishNBackSession() {
+    function finishNBackSession() {
+      clearNBackTimers();
       nbackActive = false;
 
       if (isPracticeMode) {
@@ -316,12 +334,13 @@
         meanRtMs
       };
 
-      postToSheet({ test: "3back", summary }).catch(function (err) {
+      const doneIdEl = document.getElementById("done3BackId");
+      if (doneIdEl) doneIdEl.textContent = participantId;
+      showSection("screen-3back-done");
+
+      postToSheet({ test: "3back", summary }).catch((err) => {
         console.error("Błąd zapisu 3-back:", err);
       });
-
-      document.getElementById("done3BackId").textContent = participantId;
-      showSection("screen-3back-done");
     }
 
     document.getElementById("startPracticeBtn").onclick = () => startNBackSession(true);
@@ -344,6 +363,7 @@
     let candidateIdx = 0;
 
     function loadClockImageWithFallback() {
+      candidateIdx = 0;
       img.onload = () => {
         imgErrorBox.classList.add("hidden");
         setupCanvas();
@@ -455,7 +475,10 @@
     async function finishClockTest() {
       if (clockLocked) return;
       clockLocked = true;
-      clearInterval(clockTimerId);
+      if (clockTimerId) {
+        clearInterval(clockTimerId);
+        clockTimerId = null;
+      }
       finishClockBtn.disabled = true;
       undoBtn.disabled = true;
       statusEl.textContent = "Zapisywanie rysunku na Dysk Google...";
@@ -476,14 +499,12 @@
 
       const imageBase64 = merged.toDataURL("image/jpeg", 0.8);
 
-      postToSheet({
+      await postToSheet({
         test: "zegarki_obraz",
         participantId,
         timestampIso: new Date().toISOString(),
         elapsedSec: Math.round((Date.now() - clockStartMs) / 1000),
         imageBase64
-      }).catch(function (err) {
-        console.error("Błąd zapisu rysunku:", err);
       });
 
       showSection("screen-end");
@@ -496,6 +517,18 @@
     }
 
     document.getElementById("startClockBtn").onclick = () => {
+      if (clockTimerId) {
+        clearInterval(clockTimerId);
+        clockTimerId = null;
+      }
+      clockLocked = false;
+      strokes = [];
+      currentStroke = [];
+      finishClockBtn.disabled = false;
+      undoBtn.disabled = false;
+      statusEl.textContent = "";
+      timerEl.textContent = "02:00";
+
       showSection("screen-clock-run");
       clockStartMs = Date.now();
       loadClockImageWithFallback();
@@ -505,8 +538,6 @@
         participantId,
         timestampIso: new Date().toISOString(),
         elapsedSec: 0
-      }).catch(function (err) {
-        console.error("Błąd zapisu startu zegarków:", err);
       });
 
       let left = 120;
