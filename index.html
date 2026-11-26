@@ -239,6 +239,7 @@
     let isDrawing = false;
     let strokes = [];
     let currentStroke = null;
+    let fallbackTried = false;
 
     const screens = {
       id: document.getElementById("screen-id"),
@@ -267,7 +268,8 @@
     const finishClockBtn = document.getElementById("finishClockBtn");
 
     clockBgImg.addEventListener("error", () => {
-      if (!clockBgImg.src.endsWith("zegarki.jpg")) {
+      if (!fallbackTried) {
+        fallbackTried = true;
         clockBgImg.src = "zegarki.jpg";
       }
     });
@@ -294,20 +296,17 @@
       }, REDIRECT_DELAY_MS);
     }
 
-    async function postToSheet(payload) {
+    function postToSheet(payload) {
       if (!WEBHOOK_URL || !WEBHOOK_URL.startsWith("http")) {
-        return false;
+        return Promise.resolve(false);
       }
-      try {
-        await fetch(WEBHOOK_URL, {
-          method: "POST",
-          mode: "no-cors",
-          body: JSON.stringify(payload)
-        });
-        return true;
-      } catch (_) {
-        return false;
-      }
+      return fetch(WEBHOOK_URL, {
+        method: "POST",
+        mode: "no-cors",
+        body: JSON.stringify(payload)
+      })
+        .then(() => true)
+        .catch(() => false);
     }
 
     confirmIdBtn.addEventListener("click", () => {
@@ -431,7 +430,8 @@
       }
     });
 
-    async function finishReal3Back() {
+    function finishReal3Back() {
+      clearTimeout(threeBackTimer);
       const targets = realResults.filter((r) => r.isTarget);
       const hits = targets.filter((r) => r.responded).length;
       const misses = targets.length - hits;
@@ -442,7 +442,9 @@
       const rts = realResults.filter((r) => r.rtMs !== null).map((r) => r.rtMs);
       const meanRtMs = rts.length ? Math.round(rts.reduce((a, b) => a + b, 0) / rts.length) : null;
 
-      await postToSheet({
+      showSection("introClock");
+
+      postToSheet({
         test: "3back",
         participantId,
         timestampIso: new Date().toISOString(),
@@ -459,8 +461,6 @@
         },
         trials: realResults
       });
-
-      showSection("introClock");
     }
 
     startPracticeBtn.addEventListener("click", () => start3BackSeries(true));
@@ -474,11 +474,11 @@
 
     function resizeClockCanvas() {
       const rect = clockCanvas.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0) {
-        clockCanvas.width = Math.round(rect.width);
-        clockCanvas.height = Math.round(rect.height);
-        redrawClockStrokes();
-      }
+      const w = Math.max(300, Math.round(rect.width));
+      const h = Math.max(225, Math.round(rect.height));
+      clockCanvas.width = w;
+      clockCanvas.height = h;
+      redrawClockStrokes();
     }
 
     function getCanvasPoint(e) {
@@ -486,8 +486,8 @@
       const clientX = e.touches && e.touches[0] ? e.touches[0].clientX : e.clientX;
       const clientY = e.touches && e.touches[0] ? e.touches[0].clientY : e.clientY;
       return {
-        x: ((clientX - rect.left) / rect.width) * clockCanvas.width,
-        y: ((clientY - rect.top) / rect.height) * clockCanvas.height
+        x: ((clientX - rect.left) / Math.max(1, rect.width)) * clockCanvas.width,
+        y: ((clientY - rect.top) / Math.max(1, rect.height)) * clockCanvas.height
       };
     }
 
@@ -552,16 +552,15 @@
     }
 
     function openClockTest() {
+      clearTimeout(threeBackTimer);
       clockLocked = false;
       strokes = [];
       currentStroke = null;
       finishClockBtn.disabled = false;
       clockStartMs = Date.now();
       showSection("runClock");
-      requestAnimationFrame(() => {
-        resizeClockCanvas();
-        setTimeout(resizeClockCanvas, 50);
-      });
+      resizeClockCanvas();
+      setTimeout(resizeClockCanvas, 80);
       startClockCountdown();
     }
 
@@ -600,14 +599,6 @@
       const imageBase64 = merged.toDataURL("image/jpeg", 0.85);
       const elapsedSec = Math.min(CLOCK_DURATION_SEC, Math.round((Date.now() - clockStartMs) / 1000));
 
-      await postToSheet({
-        test: "zegarki_obraz",
-        participantId,
-        timestampIso: new Date().toISOString(),
-        elapsedSec,
-        imageBase64
-      });
-
       showSection("end");
       document.getElementById("endSummary").textContent = `Wyniki dla ID: ${participantId}.`;
 
@@ -617,6 +608,15 @@
         ret.href = finalReturnUrl;
         ret.classList.remove("hidden");
       }
+
+      await postToSheet({
+        test: "zegarki_obraz",
+        participantId,
+        timestampIso: new Date().toISOString(),
+        elapsedSec,
+        imageBase64
+      });
+
       closeAndReturnToQualtrics(finalReturnUrl);
     }
 
