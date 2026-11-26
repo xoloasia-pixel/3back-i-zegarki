@@ -85,9 +85,14 @@
       color: #111;
       cursor: pointer;
     }
-    .match-btn.active-feedback {
-      background: #111;
-      color: #fff;
+    .transition-box {
+      margin: 20px 0;
+      padding: 20px;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      background: #f9fafb;
+      font-size: 17px;
+      font-weight: 600;
     }
     .status-bar {
       margin-top: 12px;
@@ -154,7 +159,9 @@
       <div id="trialCounter" class="status-bar"></div>
       <div id="stimulusDisplay" class="stimulus-box">–</div>
       <button id="matchBtn" class="match-btn" disabled>Zgodność (SPACJA)</button>
-      <div id="feedbackMsg" class="status-bar"></div>
+      <div id="practiceTransitionMsg" class="transition-box hidden">
+        Seria próbna zakończona. Za chwilę rozpocznie się test właściwy (30 znaków)...
+      </div>
     </section>
 
     <!-- Ekran 4: Przejście do testu zegarków -->
@@ -198,6 +205,7 @@
     const QUALTRICS_RETURN_URL = "";
     const RETURN_URL = QUALTRICS_RETURN_URL;
     const REDIRECT_DELAY_MS = 1500;
+    const PRACTICE_TO_REAL_DELAY_MS = 1500;
 
     const LETTERS = ["B", "F", "K", "M", "R", "S", "T", "X"];
     const PRACTICE_LENGTH = 10;
@@ -239,7 +247,7 @@
     const trialCounter = document.getElementById("trialCounter");
     const stimulusDisplay = document.getElementById("stimulusDisplay");
     const matchBtn = document.getElementById("matchBtn");
-    const feedbackMsg = document.getElementById("feedbackMsg");
+    const practiceTransitionMsg = document.getElementById("practiceTransitionMsg");
     const startClockBtn = document.getElementById("startClockBtn");
 
     const clockBgImg = document.getElementById("clockBgImg");
@@ -336,7 +344,9 @@
       threeBackModeTitle.textContent = practiceMode
         ? "3-back – seria próbna (10 znaków)"
         : "3-back – test właściwy (30 znaków)";
-      feedbackMsg.textContent = "";
+      practiceTransitionMsg.classList.add("hidden");
+      stimulusDisplay.classList.remove("hidden");
+      matchBtn.classList.remove("hidden");
       showSection("run3Back");
       nextTrial();
     }
@@ -364,8 +374,10 @@
         matchBtn.disabled = true;
         if (isPractice) {
           trialCounter.textContent = "Seria próbna zakończona.";
-          feedbackMsg.textContent = "Za chwilę rozpocznie się test właściwy (30 znaków)...";
-          threeBackTimer = setTimeout(() => start3BackSeries(false), 1200);
+          stimulusDisplay.classList.add("hidden");
+          matchBtn.classList.add("hidden");
+          practiceTransitionMsg.classList.remove("hidden");
+          threeBackTimer = setTimeout(() => start3BackSeries(false), PRACTICE_TO_REAL_DELAY_MS);
         } else {
           finishReal3Back();
         }
@@ -380,7 +392,6 @@
       trialCounter.textContent = `Znak ${currentTrialIndex + 1} z ${sequence.length}`;
       stimulusDisplay.textContent = trial.letter;
       matchBtn.disabled = false;
-      matchBtn.classList.remove("active-feedback");
 
       threeBackTimer = setTimeout(() => {
         stimulusDisplay.textContent = "";
@@ -395,13 +406,8 @@
       const trial = sequence[currentTrialIndex];
       trial.responded = true;
       const rtMs = Math.round(performance.now() - trialStartMs);
-      matchBtn.classList.add("active-feedback");
 
-      if (isPractice) {
-        feedbackMsg.textContent = trial.isTarget
-          ? `Poprawna zgodność (${rtMs} ms)`
-          : "Zaznaczono brak zgodności z literą sprzed 3 kroków";
-      } else {
+      if (!isPractice) {
         realResults.push({
           trial: currentTrialIndex + 1,
           letter: trial.letter,
@@ -524,7 +530,7 @@
       redrawClockStrokes();
     });
 
-    startClockBtn.addEventListener("click", () => {
+    function openClockTest() {
       clockLocked = false;
       strokes = [];
       currentStroke = null;
@@ -533,8 +539,13 @@
       clockStatus.textContent = "";
       clockStartMs = Date.now();
       showSection("runClock");
-      requestAnimationFrame(resizeClockCanvas);
-    });
+      requestAnimationFrame(() => {
+        resizeClockCanvas();
+        setTimeout(resizeClockCanvas, 50);
+      });
+    }
+
+    startClockBtn.addEventListener("click", openClockTest);
 
     window.addEventListener("resize", () => {
       if (!screens.runClock.classList.contains("hidden")) {
